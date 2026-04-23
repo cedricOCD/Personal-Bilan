@@ -1,95 +1,205 @@
-// ===== GESTION AUTHENTIFICATION =====
+// ===== CORTEX TRACKER - AUTH.JS =====
+// Détection réseau + Fallback automatique
 
-const loginForm = document.getElementById('login-form');
-const loginBtn = document.getElementById('login-btn');
-const errorMessage = document.getElementById('error-message');
-const errorText = document.getElementById('error-text');
-const successMessage = document.getElementById('success-message');
-const successText = document.getElementById('success-text');
-const forgotPassword = document.getElementById('forgot-password');
-const togglePassword = document.getElementById('toggle-password');
+// ===== CREDENTIALS FALLBACK (réseau Orange) =====
+const FALLBACK_USERS = {
+    'hughespascalcedric.lacharmante@orange.com': 'Test1234!'
+};
 
-// Toggle affichage mot de passe
-togglePassword.addEventListener('click', () => {
-    const passwordInput = document.getElementById('password');
-    if (passwordInput.type === 'password') {
-        passwordInput.type = 'text';
-        togglePassword.textContent = '🙈';
-    } else {
-        passwordInput.type = 'password';
-        togglePassword.textContent = '👁️';
+// ===== DÉTECTION RÉSEAU ORANGE =====
+async function isSupabaseAccessible() {
+    try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 3000); // 3 secondes max
+
+        const response = await fetch('https://edhsddxdbnlojfwuidcb.supabase.co/auth/v1/health', {
+            method: 'GET',
+            signal: controller.signal
+        });
+
+        clearTimeout(timeout);
+        return response.ok;
+    } catch (err) {
+        // Réseau bloque Supabase (Orange, firewall, etc.)
+        return false;
     }
-});
+}
 
-// Afficher erreur
+// ===== LOGIN VIA SUPABASE =====
+async function loginWithSupabase(email, password) {
+    const { data, error } = await supabaseClient.auth.signInWithPassword({
+        email: email,
+        password: password
+    });
+
+    if (error) throw error;
+    return data.user;
+}
+
+// ===== LOGIN VIA FALLBACK LOCAL =====
+function loginWithFallback(email, password) {
+    if (FALLBACK_USERS[email] && FALLBACK_USERS[email] === password) {
+        return { 
+            email: email, 
+            id: 'local-user',
+            fallback: true,
+            created_at: new Date().toISOString()
+        };
+    }
+    throw new Error('Email ou mot de passe incorrect.');
+}
+
+// ===== AFFICHER MESSAGE =====
 function showError(message) {
-    errorText.textContent = message;
-    errorMessage.style.display = 'block';
-    successMessage.style.display = 'none';
+    const errorBox = document.getElementById('error-message');
+    if (errorBox) {
+        errorBox.style.display = 'flex';
+        errorBox.innerHTML = `<i class="fas fa-triangle-exclamation"></i> ${message}`;
+    }
 }
 
-// Afficher succès
-function showSuccess(message) {
-    successText.textContent = message;
-    successMessage.style.display = 'block';
-    errorMessage.style.display = 'none';
+function hideError() {
+    const errorBox = document.getElementById('error-message');
+    if (errorBox) {
+        errorBox.style.display = 'none';
+    }
 }
 
-// Vérifier session existante
-async function checkSession() {
-    const { data: { session } } = await supabaseClient.auth.getSession();
-    if (session) {
+function showLoading(btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Connexion...';
+}
+
+function hideLoading(btn) {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-rocket"></i> SE CONNECTER';
+}
+
+// ===== VÉRIFIER SESSION EXISTANTE =====
+async function checkExistingSession() {
+    // Vérifier session Supabase
+    try {
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        if (session) {
+            window.location.href = 'dashboard.html';
+            return;
+        }
+    } catch (err) {
+        // Supabase inaccessible
+    }
+
+    // Vérifier session locale (fallback Orange)
+    const localUser = localStorage.getItem('cortex_user');
+    if (localUser) {
         window.location.href = 'dashboard.html';
     }
 }
 
-// Login
-loginForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
+// ===== GESTIONNAIRE PRINCIPAL LOGIN =====
+document.addEventListener('DOMContentLoaded', async function () {
 
-    const email = document.getElementById('email').value;
-    const password = document.getElementById('password').value;
+    // Vérifier si déjà connecté
+    await checkExistingSession();
 
-    loginBtn.disabled = true;
-    loginBtn.textContent = '⏳ Connexion en cours...';
+    // Toggle mot de passe
+    const togglePassword = document.querySelector('.toggle-password');
+    const passwordInput = document.getElementById('password');
 
-    const { data, error } = await supabaseClient.auth.signInWithPassword({
-        email,
-        password
+    if (togglePassword && passwordInput) {
+        togglePassword.addEventListener('click', function () {
+            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordInput.setAttribute('type', type);
+            this.querySelector('i').classList.toggle('fa-eye');
+            this.querySelector('i').classList.toggle('fa-eye-slash');
+        });
+    }
+
+    // Formulaire login
+    const loginForm = document.querySelector('.login-form');
+    if (!loginForm) return;
+
+    loginForm.addEventListener('submit', async function (e) {
+        e.preventDefault();
+
+        const email = document.getElementById('email').value.trim();
+        const password = document.getElementById('password').value;
+        const btn = document.querySelector('.btn-primary');
+
+        // Validation basique
+        if (!email || !password) {
+            showError('Veuillez remplir tous les champs.');
+            return;
+        }
+
+        hideError();
+        showLoading(btn);
+
+        try {
+            // ===== ÉTAPE 1 : Tester si Supabase est accessible =====
+            const supabaseOk = await isSupabaseAccessible();
+
+            if (supabaseOk) {
+                // ===== RÉSEAU NORMAL → Login Supabase =====
+                console.log('✅ Réseau normal - Login via Supabase');
+                const user = await loginWithSupabase(email, password);
+                localStorage.setItem('cortex_user', JSON.stringify({
+                    email: user.email,
+                    id: user.id,
+                    fallback: false
+                }));
+                window.location.href = 'dashboard.html';
+
+            } else {
+                // ===== RÉSEAU ORANGE → Login Fallback =====
+                console.log('⚠️ Réseau restreint - Login via fallback local');
+                const user = loginWithFallback(email, password);
+                localStorage.setItem('cortex_user', JSON.stringify(user));
+                window.location.href = 'dashboard.html';
+            }
+
+        } catch (err) {
+            console.error('Erreur login:', err);
+            showError(err.message || 'Email ou mot de passe incorrect.');
+            hideLoading(btn);
+        }
     });
 
-    if (error) {
-        showError('Email ou mot de passe incorrect.');
-        loginBtn.disabled = false;
-        loginBtn.textContent = '🚀 Se connecter';
-    } else {
-        showSuccess('Connexion réussie ! Redirection...');
-        setTimeout(() => {
-            window.location.href = 'dashboard.html';
-        }, 1000);
+    // Mot de passe oublié
+    const forgotLink = document.querySelector('.forgot-password');
+    if (forgotLink) {
+        forgotLink.addEventListener('click', async function (e) {
+            e.preventDefault();
+            const email = document.getElementById('email').value.trim();
+
+            if (!email) {
+                showError('Entrez votre email pour réinitialiser le mot de passe.');
+                return;
+            }
+
+            try {
+                const supabaseOk = await isSupabaseAccessible();
+                if (!supabaseOk) {
+                    showError('Réinitialisation impossible sur réseau restreint. Contactez l\'administrateur.');
+                    return;
+                }
+
+                const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+                    redirectTo: 'https://cedricocd.github.io/Personal-Bilan/index.html'
+                });
+
+                if (error) throw error;
+
+                const errorBox = document.getElementById('error-message');
+                if (errorBox) {
+                    errorBox.style.display = 'flex';
+                    errorBox.style.background = 'rgba(0, 255, 150, 0.1)';
+                    errorBox.style.borderColor = 'rgba(0, 255, 150, 0.4)';
+                    errorBox.style.color = '#00ff96';
+                    errorBox.innerHTML = '<i class="fas fa-check-circle"></i> Email de réinitialisation envoyé !';
+                }
+            } catch (err) {
+                showError('Erreur lors de l\'envoi. Réessayez plus tard.');
+            }
+        });
     }
 });
-
-// Mot de passe oublié
-forgotPassword.addEventListener('click', async (e) => {
-    e.preventDefault();
-    const email = document.getElementById('email').value;
-
-    if (!email) {
-        showError('Veuillez entrer votre email pour réinitialiser votre mot de passe.');
-        return;
-    }
-
-    const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
-        redirectTo: window.location.origin + '/index.html'
-    });
-
-    if (error) {
-        showError('Erreur lors de l\'envoi de l\'email.');
-    } else {
-        showSuccess('Email de réinitialisation envoyé ! Vérifiez votre boîte mail.');
-    }
-});
-
-// Vérifier session au chargement
-checkSession();
