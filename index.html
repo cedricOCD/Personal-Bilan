@@ -1,1 +1,76 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cortex Tracker - Login</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="login-page">
 
+    <div class="login-container">
+        
+        <!-- Header -->
+        <div class="login-header">
+            <div class="login-logo">🎯</div>
+            <h1>Cortex Tracker</h1>
+            <p>Suivi des tickets MUT | SG | SDX</p>
+        </div>
+
+        <!-- Message d'erreur -->
+        <div id="error-message" class="error-box" style="display:none;">
+            ⚠️ <span id="error-text"></span>
+        </div>
+
+        <!-- Message de succès -->
+        <div id="success-message" class="success-box" style="display:none;">
+            ✅ <span id="success-text"></span>
+        </div>
+
+        <!-- Formulaire Login -->
+        <form id="login-form" class="login-form">
+            <div class="form-group">
+                <label for="email">📧 Email</label>
+                <input 
+                    type="email" 
+                    id="email" 
+                    placeholder="votre@email.com" 
+                    required
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="password">🔒 Mot de passe</label>
+                <div class="password-wrapper">
+                    <input 
+                        type="password" 
+                        id="password" 
+                        placeholder="••••••••" 
+                        required
+                    >
+                    <span id="toggle-password" class="toggle-password">👁️</span>
+                </div>
+            </div>
+
+            <button type="submit" id="login-btn" class="btn-primary">
+                🚀 Se connecter
+            </button>
+
+            <div class="form-links">
+                <a href="#" id="forgot-password">Mot de passe oublié ?</a>
+            </div>
+        </form>
+
+        <!-- Footer -->
+        <div class="login-footer">
+            <p>Cortex Tracker v1.0</p>
+        </div>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase.js"></script>
+    <script src="js/auth.js"></script>
+
+</body>
+</html>
