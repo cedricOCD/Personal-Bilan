@@ -1,1 +1,226 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cortex Tracker - Dashboard</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="dashboard-page">
 
+    <!-- ===== SIDEBAR ===== -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo">
+                <i class="fas fa-crosshairs"></i>
+            </div>
+            <div class="sidebar-title">
+                <h2>CORTEX</h2>
+                <span>TRACKER</span>
+            </div>
+            <button class="sidebar-toggle" id="sidebarToggle">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+
+        <nav class="sidebar-nav">
+            <a href="dashboard.html" class="nav-item active">
+                <i class="fas fa-gauge-high"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="tickets.html" class="nav-item">
+                <i class="fas fa-ticket"></i>
+                <span>Tickets</span>
+            </a>
+            <a href="appels.html" class="nav-item">
+                <i class="fas fa-phone"></i>
+                <span>Appels</span>
+            </a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <div class="user-avatar">
+                    <i class="fas fa-user"></i>
+                </div>
+                <div class="user-details">
+                    <span class="user-name" id="userName">Chargement...</span>
+                    <span class="user-role">Analyste</span>
+                </div>
+            </div>
+            <button class="btn-logout" id="logoutBtn">
+                <i class="fas fa-right-from-bracket"></i>
+            </button>
+        </div>
+    </aside>
+
+    <!-- ===== MAIN CONTENT ===== -->
+    <main class="main-content" id="mainContent">
+
+        <!-- TOPBAR -->
+        <header class="topbar">
+            <div class="topbar-left">
+                <button class="mobile-menu-btn" id="mobileMenuBtn">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div class="page-title">
+                    <h1><i class="fas fa-gauge-high"></i> Dashboard</h1>
+                    <span>Vue d'ensemble des tickets</span>
+                </div>
+            </div>
+            <div class="topbar-right">
+                <div class="network-badge" id="networkBadge">
+                    <i class="fas fa-circle-notch fa-spin"></i>
+                    <span>Détection...</span>
+                </div>
+                <div class="current-date" id="currentDate"></div>
+            </div>
+        </header>
+
+        <!-- STATS CARDS -->
+        <section class="stats-grid">
+            <div class="stat-card stat-total">
+                <div class="stat-icon">
+                    <i class="fas fa-ticket"></i>
+                </div>
+                <div class="stat-info">
+                    <span class="stat-label">Total Tickets</span>
+                    <span class="stat-value" id="totalTickets">0</span>
+                    <span class="stat-sub">Tous statuts</span>
+                </div>
+                <div class="stat-glow"></div>
+            </div>
+
+            <div class="stat-card stat-open">
+                <div class="stat-icon">
+                    <i class="fas fa-folder-open"></i>
+                </div>
+                <div class="stat-info">
+                    <span class="stat-label">Ouverts</span>
+                    <span class="stat-value" id="openTickets">0</span>
+                    <span class="stat-sub">En cours</span>
+                </div>
+                <div class="stat-glow"></div>
+            </div>
+
+            <div class="stat-card stat-progress">
+                <div class="stat-icon">
+                    <i class="fas fa-spinner"></i>
+                </div>
+                <div class="stat-info">
+                    <span class="stat-label">En Traitement</span>
+                    <span class="stat-value" id="progressTickets">0</span>
+                    <span class="stat-sub">En cours de traitement</span>
+                </div>
+                <div class="stat-glow"></div>
+            </div>
+
+            <div class="stat-card stat-closed">
+                <div class="stat-icon">
+                    <i class="fas fa-circle-check"></i>
+                </div>
+                <div class="stat-info">
+                    <span class="stat-label">Fermés</span>
+                    <span class="stat-value" id="closedTickets">0</span>
+                    <span class="stat-sub">Résolus</span>
+                </div>
+                <div class="stat-glow"></div>
+            </div>
+
+            <div class="stat-card stat-calls">
+                <div class="stat-icon">
+                    <i class="fas fa-phone"></i>
+                </div>
+                <div class="stat-info">
+                    <span class="stat-label">Appels</span>
+                    <span class="stat-value" id="totalCalls">0</span>
+                    <span class="stat-sub">Total appels</span>
+                </div>
+                <div class="stat-glow"></div>
+            </div>
+
+            <div class="stat-card stat-urgent">
+                <div class="stat-icon">
+                    <i class="fas fa-triangle-exclamation"></i>
+                </div>
+                <div class="stat-info">
+                    <span class="stat-label">Urgents</span>
+                    <span class="stat-value" id="urgentTickets">0</span>
+                    <span class="stat-sub">Priorité haute</span>
+                </div>
+                <div class="stat-glow"></div>
+            </div>
+        </section>
+
+        <!-- RECENT TICKETS -->
+        <section class="dashboard-section">
+            <div class="section-header">
+                <h2><i class="fas fa-clock-rotate-left"></i> Tickets Récents</h2>
+                <a href="tickets.html" class="btn-see-all">
+                    Voir tout <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+            <div class="table-container">
+                <table class="data-table" id="recentTicketsTable">
+                    <thead>
+                        <tr>
+                            <th><i class="fas fa-hashtag"></i> ID</th>
+                            <th><i class="fas fa-tag"></i> Titre</th>
+                            <th><i class="fas fa-layer-group"></i> Catégorie</th>
+                            <th><i class="fas fa-flag"></i> Priorité</th>
+                            <th><i class="fas fa-circle-half-stroke"></i> Statut</th>
+                            <th><i class="fas fa-calendar"></i> Date</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recentTicketsBody">
+                        <tr>
+                            <td colspan="6" class="table-empty">
+                                <i class="fas fa-inbox"></i>
+                                <span>Aucun ticket pour le moment</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- RECENT CALLS -->
+        <section class="dashboard-section">
+            <div class="section-header">
+                <h2><i class="fas fa-phone-volume"></i> Appels Récents</h2>
+                <a href="appels.html" class="btn-see-all">
+                    Voir tout <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+            <div class="table-container">
+                <table class="data-table" id="recentCallsTable">
+                    <thead>
+                        <tr>
+                            <th><i class="fas fa-hashtag"></i> ID</th>
+                            <th><i class="fas fa-user"></i> Client</th>
+                            <th><i class="fas fa-phone"></i> Numéro</th>
+                            <th><i class="fas fa-circle-half-stroke"></i> Statut</th>
+                            <th><i class="fas fa-clock"></i> Durée</th>
+                            <th><i class="fas fa-calendar"></i> Date</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recentCallsBody">
+                        <tr>
+                            <td colspan="6" class="table-empty">
+                                <i class="fas fa-inbox"></i>
+                                <span>Aucun appel pour le moment</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase.js"></script>
+    <script src="js/dashboard.js"></script>
+</body>
+</html>
